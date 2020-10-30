@@ -40,7 +40,7 @@ class TestPlot(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
     
-
+# hello test comment for git
 
 class SinglePhasePlot(QGroupBox):
     
@@ -132,4 +132,10 @@ window = SinglePhasePlot()
 window.show()
 
 app.exec_() 
+
+
+
+
+
+
 
