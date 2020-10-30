@@ -24,7 +24,6 @@ class TestPlot(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(TestPlot, self).__init__(*args, **kwargs)
         
-        global sc
         sc = MplCanvas(self, width=5, height=4, dpi=100)
         sc.axes.plot([0,1,2,3,4], [1,2,3,2,5])
         
