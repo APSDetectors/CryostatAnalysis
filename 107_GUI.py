@@ -5,8 +5,7 @@ from PyQt5.QtCore import *
 
 from cryostat_functions import load_107, split_107
 
-import matplotlib
-matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
@@ -24,9 +23,8 @@ class PlotWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(PlotWindow, self).__init__(*args, **kwargs)
         
-    def plot(self):
+    def new_canvas(self):
         self.sc = MplCanvas(self, width=5, height=4, dpi=100)
-        
         toolbar = NavigationToolbar(self.sc, self)
         layout = QVBoxLayout()
         layout.addWidget(toolbar)
@@ -37,7 +35,7 @@ class PlotWindow(QMainWindow):
     
 app= QApplication([])
 window = PlotWindow()
-window.plot()
+window.new_canvas()
 window.sc.axes.plot([0,1,2,3,4], [1,2,3,2,5])
 window.show()
 app.exec_()
