@@ -3,19 +3,17 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from cryostat_functions import load_107, split_107
+from cryostat_functions import load_107, split_107, temp_hold
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
 
 import sys 
 
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+        fig = plt.figure()
         super(MplCanvas, self).__init__(fig)
 
 class PlotWindow(QMainWindow):
@@ -24,19 +22,22 @@ class PlotWindow(QMainWindow):
         super(PlotWindow, self).__init__(*args, **kwargs)
         
     def new_canvas(self):
-        self.sc = MplCanvas(self, width=5, height=4, dpi=100)
-        toolbar = NavigationToolbar(self.sc, self)
+        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        toolbar = NavigationToolbar(self.canvas, self)
         layout = QVBoxLayout()
         layout.addWidget(toolbar)
-        layout.addWidget(self.sc)
+        layout.addWidget(self.canvas)
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
     
+log=load_107(#ENTER FILE PATH HERE)
+dicts = split_107
+dicts[2] = temp_hold(dicst[2])
 app= QApplication([])
 window = PlotWindow()
-window.new_canvas()
-window.sc.axes.plot([0,1,2,3,4], [1,2,3,2,5])
+axes = window.figure.add_subplot(111)
+axes.plot([0,1,2,3,4], [1,2,3,2,5])
 window.show()
 app.exec_()
 
