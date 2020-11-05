@@ -2,7 +2,6 @@ import numpy as np
 from scipy import stats 
 import matplotlib.pyplot as plt
 import pandas as pd
-from GUI_107 import MplCanvas, PlotWindow
 
 
 '''
@@ -177,7 +176,7 @@ The functions below create plots for a single cryostat phase
 
 '''
 
-def cooldown_plot(cooldown_log):
+def cooldown_plot(cooldown_log,window):
     '''
     Creates plot for cooldown or warmup stage, showing temperatures of temperature stages versus time
 
@@ -192,7 +191,7 @@ def cooldown_plot(cooldown_log):
         Figure of temperatures of temperature stages versus time
 
     '''
-    cooldown_fig, ax = plt.subplots()
+    ax = window.canvas.axes
     ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,2], '-', label="50 mK FAA") #Plot 50 mK stage
     ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,3], '-', label= cooldown_log.columns[3]) #Plot He-3 or ADR 1K stage, depending on log file type
     #Plot 3K Stage Diode or Magnet Diode depending on log file type 
@@ -204,7 +203,6 @@ def cooldown_plot(cooldown_log):
     ax.set_xlabel('Time after start (hrs)')
     ax.set_ylabel('Temperature (K)')
     ax.legend(loc='upper right')
-    return cooldown_fig
 
 def regen_plot(regen_log):
     '''

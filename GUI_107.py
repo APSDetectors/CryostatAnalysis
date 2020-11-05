@@ -3,7 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 
-from cryostat_functions import load_107, split_107, temp_hold
+import cryostat_functions as cryo
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
@@ -14,8 +14,10 @@ class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = plt.figure()
+        self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
-
+    def figure(self,grid): 
+        
 class PlotWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -31,13 +33,12 @@ class PlotWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
     
-log=load_107(#ENTER FILE PATH HERE)
-dicts = split_107
-dicts[2] = temp_hold(dicst[2])
+log=cryo.load_107(r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2019_08_23_09;43snout_swissx_M-451.csv")
+dicts = cryo.split_107(log)
 app= QApplication([])
 window = PlotWindow()
-axes = window.figure.add_subplot(111)
-axes.plot([0,1,2,3,4], [1,2,3,2,5])
+window.new_canvas()
+cryo.cooldown_plot(dicts[0]['log1'],window)
 window.show()
 app.exec_()
 
@@ -102,8 +103,7 @@ class SinglePhasePlot(QGroupBox):
         options = ["cooldown", "warmup"]
         self.choosephase.clear()
         self.choosephase.addItems(options)
-        global phasetype
-        phasetype = 0
+        #self.phasetype = 0?
         
     def press_regen(self):
         options = list(logs[1].keys())
