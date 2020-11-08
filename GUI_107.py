@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -17,7 +16,8 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
     def figure(self,grid): 
-        
+        pass
+    
 class PlotWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
@@ -33,6 +33,8 @@ class PlotWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
     
+
+
 log=cryo.load_107(r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2019_08_23_09;43snout_swissx_M-451.csv")
 dicts = cryo.split_107(log)
 app= QApplication([])
@@ -95,7 +97,7 @@ class SinglePhasePlot(QGroupBox):
         if path:
             global logs
             self.filelabel.setText(path[0:15] + '...' + path[-25:]) 
-            logs = split_107(load_107(path))
+            logs = cryo.split_107(cryo.load_107(path))
         
         #the following 3 functions are repetitive. is there a way to connect all three buttons to the same function
         #which then uses a conditional statement based on which button is pressed? is there a way to tell which button is pressed?
@@ -126,7 +128,7 @@ class SinglePhasePlot(QGroupBox):
         self.plotwindow.show()
         
         
-'''       
+'''   
 
 app = QApplication(sys.argv)
 
