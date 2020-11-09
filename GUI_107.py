@@ -12,18 +12,13 @@ import sys
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = plt.figure()
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
-    def figure(self,grid): 
-        pass
+        self.fig = plt.figure()
+        super(MplCanvas, self).__init__(self.fig)
     
 class PlotWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs):
         super(PlotWindow, self).__init__(*args, **kwargs)
-        
-    def new_canvas(self):
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         toolbar = NavigationToolbar(self.canvas, self)
         layout = QVBoxLayout()
@@ -32,19 +27,6 @@ class PlotWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
-    
-
-
-log=cryo.load_107(r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2019_08_23_09;43snout_swissx_M-451.csv")
-dicts = cryo.split_107(log)
-app= QApplication([])
-window = PlotWindow()
-window.new_canvas()
-cryo.cooldown_plot(dicts[0]['log1'],window)
-window.show()
-app.exec_()
-
-
        
 class SinglePhasePlot(QGroupBox):
     
@@ -95,9 +77,8 @@ class SinglePhasePlot(QGroupBox):
     def open_file(self):
         path = QFileDialog.getOpenFileName(window, "Open")[0]
         if path:
-            global logs
             self.filelabel.setText(path[0:15] + '...' + path[-25:]) 
-            logs = cryo.split_107(cryo.load_107(path))
+            self.logs = cryo.split_107(cryo.load_107(path))
         
         #the following 3 functions are repetitive. is there a way to connect all three buttons to the same function
         #which then uses a conditional statement based on which button is pressed? is there a way to tell which button is pressed?
@@ -105,30 +86,38 @@ class SinglePhasePlot(QGroupBox):
         options = ["cooldown", "warmup"]
         self.choosephase.clear()
         self.choosephase.addItems(options)
-        #self.phasetype = 0?
+        self.phasetype = 0
         
     def press_regen(self):
-        options = list(logs[1].keys())
+        options = list(self.logs[1].keys())
         self.choosephase.clear()
         self.choosephase.addItems(options)
-        phasetype = 1 
+        self.phasetype = 1 
             
     def press_reg(self):
-        options = list(logs[2].keys())
+        options = list(self.logs[2].keys())
         self.choosephase.clear()
         self.choosephase.addItems(options)
-        phasetype = 2
+        self.phasetype = 2
         
     def choose_phase(self):
-        phaseindex = self.choosephase.currentIndex()
-        print(phaseindex)
+        self.phaseindex = self.choosephase.currentIndex()
+        print(self.phaseindex)
             
     def show_plot(self):
-        self.plotwindow = TestPlot()
+        self.plotwindow = PlotWindow()
+        if self.phasetype == 0: 
+            if self.phaseindex == 0:
+                cryo.cooldown_plot(self.logs[0]['log1'],self.plotwindow)
+            elif self.phaseindex == 1: 
+                cryo.cooldown_plot(self.logs[0]['log{}'.format(len(self.logs[0]))],self.plotwindow)
+        if self.phasetype ==1: 
+            cryo.regen_plot(self.logs[1]['regen{}'.format(self.phaseindex+1)],self.plotwindow)
+        if self.phasetype ==2: 
+            cryo.reg_plot(self.logs[2]['reg{}'.format(self.phaseindex+1)],self.plotwindow)
         self.plotwindow.show()
         
-        
-'''   
+    
 
 app = QApplication(sys.argv)
 
@@ -137,7 +126,7 @@ window.show()
 
 app.exec_() 
 
-'''
+
 
 
 

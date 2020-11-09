@@ -191,7 +191,7 @@ def cooldown_plot(cooldown_log,window):
         Figure of temperatures of temperature stages versus time
 
     '''
-    ax = window.canvas.axes
+    ax = window.canvas.fig.add_subplot(111)
     ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,2], '-', label="50 mK FAA") #Plot 50 mK stage
     ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,3], '-', label= cooldown_log.columns[3]) #Plot He-3 or ADR 1K stage, depending on log file type
     #Plot 3K Stage Diode or Magnet Diode depending on log file type 
@@ -204,7 +204,7 @@ def cooldown_plot(cooldown_log,window):
     ax.set_ylabel('Temperature (K)')
     ax.legend(loc='upper right')
 
-def regen_plot(regen_log):
+def regen_plot(regen_log,window):
     '''
     Creates two plots for a magnet cycle stage, one showing 50 mK temperature and one showing magnet current and voltage
     
@@ -221,7 +221,8 @@ def regen_plot(regen_log):
         Magnet current and voltage versus time
 
     '''
-    regen_plot, (ax1, ax2) = plt.subplots(1, 2, figsize = (14,5))
+    ax1 = window.canvas.fig.add_subplot(121)
+    ax2 = window.canvas.fig.add_subplot(122)
     
     #Temperature subplot
     ax1.plot(regen_log.iloc[:,1], regen_log.iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
@@ -240,10 +241,8 @@ def regen_plot(regen_log):
     axs = PS_I+PS_V
     labs = [l.get_label() for l in axs]
     ax2.legend(axs, labs, loc='center')
-    
-    return regen_plot
 
-def reg_plot(reg_log):
+def reg_plot(reg_log,window):
     '''
     Creates two plots for temperature hold stage, one showing 50 mK temperature and one showing magnet current and voltage
     Creates same plots as regen_plot but with adjusted legend locations
@@ -261,7 +260,8 @@ def reg_plot(reg_log):
         Magnet current and voltage versus time
 
     '''
-    reg_plot, (ax1, ax2) = plt.subplots(1, 2, figsize = (14,5))
+    ax1 = window.canvas.fig.add_subplot(121)
+    ax2 = window.canvas.fig.add_subplot(122)
     
     #Temperature subplot
     ax1.plot(reg_log.iloc[:,1], reg_log.iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
@@ -280,8 +280,6 @@ def reg_plot(reg_log):
     axs = PS_I+PS_V
     labs = [l.get_label() for l in axs]
     ax2.legend(axs, labs, loc='upper right')
-    
-    return reg_plot
 
 '''
 
