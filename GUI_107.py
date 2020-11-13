@@ -17,8 +17,8 @@ class MplCanvas(FigureCanvasQTAgg):
     
 class PlotWindow(QMainWindow):
 
-    def __init__(self, *args, **kwargs):
-        super(PlotWindow, self).__init__(*args, **kwargs)
+    def __init__(self):
+        super(PlotWindow, self).__init__()
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         toolbar = NavigationToolbar(self.canvas, self)
         layout = QVBoxLayout()
@@ -30,8 +30,8 @@ class PlotWindow(QMainWindow):
        
 class SinglePhasePlot(QGroupBox):
     
-    def __init__(self, *args, **kwargs):
-        super(SinglePhasePlot, self).__init__(*args, **kwargs)
+    def __init__(self):
+        super(SinglePhasePlot, self).__init__()
         
         self.setTitle("Single Phase Plots")
         
@@ -77,8 +77,9 @@ class SinglePhasePlot(QGroupBox):
     def open_file(self):
         path = QFileDialog.getOpenFileName(window, "Open")[0]
         if path:
-            self.filelabel.setText(path[0:15] + '...' + path[-25:]) 
             self.logs = cryo.split_107(cryo.load_107(path))
+            self.filelabel.setText(str(self.logs[0]['log1'].iloc[0,0])[:10] + ' log') 
+            
         
         #the following 3 functions are repetitive. is there a way to connect all three buttons to the same function
         #which then uses a conditional statement based on which button is pressed? is there a way to tell which button is pressed?
@@ -117,11 +118,83 @@ class SinglePhasePlot(QGroupBox):
             cryo.reg_plot(self.logs[2]['reg{}'.format(self.phaseindex+1)],self.plotwindow)
         self.plotwindow.show()
         
+class MultiplePhasePlot(QGroupBox):
+    def __init__(self):
+        super(MultiplePhasePlot, self).__init__()
+        
+        self.setTitle("Multiple Phase Plots")
+        
+        self.filebutton = QPushButton("Choose File")
+        self.filelabel = QLabel("")
+        
+        filelayout = QHBoxLayout()
+        filelayout.addWidget(self.filebutton)
+        filelayout.addWidget(self.filelabel) 
+        
+        self.regentempbutton = QRadioButton("Mag cycle 50 mK temp")
+        self.regenmagbutton = QRadioButton("Mag cycle current")
+        self.regtempbutton = QRadioButton("Temp hold 50 mK temp")
+        self.regmagbutton = QRadioButton("Temp hold current")
+        self.reg3kbutton = QRadioButton("Temp hold 3K temp")
+        
+        buttonlayout = QVBoxLayout()
+        buttonlayout.addWidget(self.regentempbutton)
+        buttonlayout.addWidget(self.regenmagbutton)
+        buttonlayout.addWidget(self.regtempbutton)
+        buttonlayout.addWidget(self.regmagbutton)
+        buttonlayout.addWidget(self.reg3kbutton)
     
-
+        self.plotbutton = QPushButton("Plot")
+        
+        layout = QVBoxLayout()
+        layout.addLayout(filelayout)
+        layout.addLayout(buttonlayout)
+        layout.addWidget(self.plotbutton)
+        self.setLayout(layout)
+        
+        self.filebutton.clicked.connect(self.open_file)
+        self.regentempbutton.pressed.connect(self.chooseplottype)
+        self.regenmagbutton.pressed.connect(self.chooseplottype)
+        self.regtempbutton.pressed.connect(self.chooseplottype)
+        self.regmagbutton.pressed.connect(self.chooseplottype)
+        self.reg3kbutton.pressed.connect(self.chooseplottype)
+        
+    def open_file(self):
+        path = QFileDialog.getOpenFileName(window, "Open")[0]
+        if path:
+            self.logs = cryo.split_107(cryo.load_107(path))
+            self.filelabel.setText(str(self.logs[0]['log1'].iloc[0,0])[:10] + ' log') 
+            cryo.temp_hold(self.logs[2])
+    
+    def chooseplottype(self): 
+        sender = self.sender()
+        plottype = sender.text()
+        print(plottype)
+    
+    
+    
+        
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        
+        self.Q1 = SinglePhasePlot()
+        self.Q2 = MultiplePhasePlot()
+        
+        layout = QGridLayout()
+        layout.addWidget(self.Q1, 0, 0)
+        layout.addWidget(self.Q2, 0, 1)
+        
+        widget = QWidget()
+        widget.setLayout(layout)
+        
+        self.setCentralWidget(widget)
+        
+        
+        
 app = QApplication(sys.argv)
 
-window = SinglePhasePlot()
+window = MainWindow()
 window.show()
 
 app.exec_() 
