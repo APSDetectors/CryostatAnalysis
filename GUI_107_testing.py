@@ -13,6 +13,8 @@ import cryostat_functions as cryo
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 
+import pandas as pd
+
 import sys 
 
 class MplCanvas(FigureCanvasQTAgg):
@@ -37,20 +39,55 @@ class PlotWindow(QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
         
-'''
-app= QApplication([])
-window = PlotWindow() 
-ax = window.canvas.fig.add_subplot(111)
-ax.plot([1,2,3],[5,8,2])
-window.show()
-app.exec_()
-'''
+class SummaryPlot(QGroupBox):
+    def __init__(self):
+        super(SummaryPlot, self).__init__()
+        
+        self.setTitle("Summary Quantity Plots")
+        
+        self.filebutton = QPushButton("Choose Files")
+        self.filelabel = QLabel("")
+        
+        filelayout = QHBoxLayout()
+        filelayout.addWidget(self.filebutton)
+        filelayout.addWidget(self.filelabel) 
+        
+        self.maxcurrentbutton = QRadioButton("Max current vs. hold time")
+        self.stddevbutton = QRadioButton("50 mK std dev vs. date")
+        self.tempqtysbutton = QRadioButton("50 mK temperature qtys vs. date")
+    
+        buttonlayout = QVBoxLayout()
+        buttonlayout.addWidget(self.maxcurrentbutton)
+        buttonlayout.addWidget(self.stddevbutton)
+        buttonlayout.addWidget(self.tempqtysbutton)
+        
+        self.plotbutton = QPushButton("Plot")
+        
+        layout = QVBoxLayout()
+        layout.addLayout(filelayout)
+        layout.addLayout(buttonlayout)
+        layout.addWidget(self.plotbutton)
+        self.setLayout(layout)
+        
+        self.filebutton.clicked.connect(self.open_files)
+        
+    def open_files(self):
+        paths = QFileDialog.getOpenFileNames(self, "Open")[0]
+        if paths: 
+            dates = ""
+            for i in paths: 
+                firstrows = pd.read_csv(r'{}'.format(i), nrows = 3)
+                print(firstrows)
+                dates += str(firstrows.iloc[2,0][:10] + ' log')  + '\n'
+            self.filelabel.setText(dates) 
+        
+        print(type(paths))
+        print(paths)
+    
+    
+app = QApplication(sys.argv)
 
-log=cryo.load_107(r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2019_08_23_09;43snout_swissx_M-451.csv")
-dicts = cryo.split_107(log)
-app= QApplication([])
-window = PlotWindow()
-cryo.reg_plot(dicts[2]['reg1'],window)
+window = SummaryPlot()
 window.show()
-app.exec_()
 
+app.exec_()

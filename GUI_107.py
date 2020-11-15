@@ -6,6 +6,7 @@ import cryostat_functions as cryo
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+import pandas as pd
 
 import sys 
 
@@ -75,14 +76,11 @@ class SinglePhasePlot(QGroupBox):
         self.plot.clicked.connect(self.show_plot)
     
     def open_file(self):
-        path = QFileDialog.getOpenFileName(window, "Open")[0]
+        path = QFileDialog.getOpenFileName(self, "Open")[0]
         if path:
             self.logs = cryo.split_107(cryo.load_107(path))
             self.filelabel.setText(str(self.logs[0]['log1'].iloc[0,0])[:10] + ' log') 
             
-        
-        #the following 3 functions are repetitive. is there a way to connect all three buttons to the same function
-        #which then uses a conditional statement based on which button is pressed? is there a way to tell which button is pressed?
     def press_cool(self):
         options = ["cooldown", "warmup"]
         self.choosephase.clear()
@@ -160,7 +158,7 @@ class MultiplePhasePlot(QGroupBox):
         self.reg3kbutton.pressed.connect(self.chooseplottype)
         
     def open_file(self):
-        path = QFileDialog.getOpenFileName(window, "Open")[0]
+        path = QFileDialog.getOpenFileName(self, "Open")[0]
         if path:
             self.logs = cryo.split_107(cryo.load_107(path))
             self.filelabel.setText(str(self.logs[0]['log1'].iloc[0,0])[:10] + ' log') 
@@ -171,8 +169,55 @@ class MultiplePhasePlot(QGroupBox):
         plottype = sender.text()
         print(plottype)
     
+class SummaryPlot(QGroupBox):
+    def __init__(self):
+        super(SummaryPlot, self).__init__()
+        
+        self.setTitle("Summary Quantity Plots")
+        
+        self.filebutton = QPushButton("Choose Files")
+        self.filelabel = QLabel("")
+        
+        filelayout = QHBoxLayout()
+        filelayout.addWidget(self.filebutton)
+        filelayout.addWidget(self.filelabel) 
+        
+        self.maxcurrentbutton = QRadioButton("Max current vs. hold time")
+        self.stddevbutton = QRadioButton("50 mK std dev vs. date")
+        self.tempqtysbutton = QRadioButton("50 mK temperature qtys vs. date")
     
+        buttonlayout = QVBoxLayout()
+        buttonlayout.addWidget(self.maxcurrentbutton)
+        buttonlayout.addWidget(self.stddevbutton)
+        buttonlayout.addWidget(self.tempqtysbutton)
+        
+        self.plotbutton = QPushButton("Plot")
+        
+        layout = QVBoxLayout()
+        layout.addLayout(filelayout)
+        layout.addLayout(buttonlayout)
+        layout.addWidget(self.plotbutton)
+        self.setLayout(layout)
+        
+        self.filebutton.clicked.connect(self.open_files)
+        self.maxcurrentbutton.pressed.connect(self.chooseplottype)
+        self.stddevbutton.pressed.connect(self.chooseplottype)
+        self.tempqtysbutton.pressed.connect(self.chooseplottype)
+        
+    def open_files(self):
+        paths = QFileDialog.getOpenFileNames(self, "Open")[0]
+        if paths: 
+            dates = ""
+            for i in paths: 
+                firstrows = pd.read_csv(r'{}'.format(i), nrows = 3)
+                print(firstrows)
+                dates += str(firstrows.iloc[2,0][:10] + ' log')  + '\n'
+            self.filelabel.setText(dates) 
     
+    def chooseplottype(self): 
+        sender = self.sender()
+        plottype = sender.text()
+        print(plottype)
         
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -180,10 +225,12 @@ class MainWindow(QMainWindow):
         
         self.Q1 = SinglePhasePlot()
         self.Q2 = MultiplePhasePlot()
+        self.Q3 = SummaryPlot()
         
         layout = QGridLayout()
         layout.addWidget(self.Q1, 0, 0)
         layout.addWidget(self.Q2, 0, 1)
+        layout.addWidget(self.Q3, 1, 0)
         
         widget = QWidget()
         widget.setLayout(layout)
