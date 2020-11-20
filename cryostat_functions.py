@@ -476,7 +476,7 @@ The functions below calculate various summary quantities
 
 '''
 
-def temp_summary(regfiles):
+def temp_summary(regfiles, cryostat):
     '''
     Creates dictionary of temperature-related summary quantities for all temperature stages (i.e. 50 mK, 3K, etc) 
     and all temperature hold phases of a run.
@@ -496,8 +496,6 @@ def temp_summary(regfiles):
 
     '''
     #Slightly different logic depending on cryostat model due to unique column names 
-    global cryostat
-    cryostat = int(input('Cryostat Model: '))
     if cryostat == 107:
         temps = ['50 mK','He-3','3 K','50 K']
         columns = [2,3,4,6]
@@ -512,7 +510,7 @@ def temp_summary(regfiles):
         temp_qtys[j] = pd.DataFrame(data=qtys[:,1:],index = qtys[:,0],columns = ['{} min'.format(j), '{} max'.format(j),'{} range'.format(j),'{} mean'.format(j),'{} std dev'.format(j)]).sort_index()
     return temp_qtys
 
-def temp_summary_combine(temp_qtys):
+def temp_summary_combine(temp_qtys, cryostat):
     '''
     Creates a single spreadsheet of temperature-related summary quantities for all temperature stages (i.e. 50 mK, 3K, etc)
     and all temperature holds of a run.
@@ -639,7 +637,7 @@ def regen_summary(regenfiles):
     #Create array of lists, with each list containing the magnet cycle number and magnet cycle time for a magnet cycle.
     qtys = np.array([np.array([key[5:],regen_time(log)]) for key, log in regenfiles.items()])
     #Create Pandas Series from array 
-    regen_times = pd.Series(data=qtys[:,1],index = qtys[:,0], name = 'Regen times').sort_index().reset_index(drop=True)
+    regen_times = pd.DataFrame(data=qtys[:,1],index = qtys[:,0], columns = ['Regen times']).sort_index().reset_index(drop=True)
     return regen_times
 
 '''

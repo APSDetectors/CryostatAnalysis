@@ -1,6 +1,7 @@
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 import cryostat_functions as cryo
 
@@ -28,6 +29,72 @@ class PlotWindow(QMainWindow):
         widget = QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
+
+class TableModel(QtCore.QAbstractTableModel):
+
+    def __init__(self, data, parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return self._data.shape[0]
+
+    def columnCount(self, parent=None):
+        return self._data.shape[1]
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return str(self._data.iloc[index.row(), index.column()])
+        return None
+
+    def headerData(self, x, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self._data.columns[x]
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            return self._data.index[x]
+        return None
+    
+class TableWindow(QMainWindow):
+    def __init__(self, data):
+        super().__init__()
+        
+        self.data = data
+        self.table = QtWidgets.QTableView()
+        self.model = TableModel(self.data)
+        self.table.setModel(self.model)
+        self.setCentralWidget(self.table)
+        
+class CoolWarmWindow(QWidget):
+    def __init__(self,coollog,warmlog):
+        super(CoolWarmWindow, self).__init__()
+        
+        self.coollog = coollog
+        self.warmlog = warmlog
+        
+        self.coolbutton = QRadioButton("Cooldown time")
+        self.warmbutton= QRadioButton("Warmup time")
+        self.time = QLabel("")
+        
+        buttonlayout = QVBoxLayout()
+        buttonlayout.addWidget(self.coolbutton)
+        buttonlayout.addWidget(self.warmbutton)
+        
+        layout = QHBoxLayout()
+        layout.addLayout(buttonlayout)
+        layout.addWidget(self.time)
+        self.setLayout(layout)
+        
+        self.coolbutton.pressed.connect(self.cooltime)
+        self.warmbutton.pressed.connect(self.warmtime)
+
+    def cooltime(self):
+        text = str(cryo.coolwarm_time(self.coollog))
+        self.time.setText(text + ' hours')
+        
+    def warmtime(self):
+        text = str(cryo.coolwarm_time(self.warmlog))
+        self.time.setText(text + ' hours')
        
 class SinglePhasePlot(QGroupBox):
     
@@ -166,8 +233,8 @@ class MultiplePhasePlot(QGroupBox):
     
     def chooseplottype(self): 
         sender = self.sender()
-        plottype = sender.text()
-        print(plottype)
+        self.plottype = sender.text()
+        print(self.plottype)
     
 class SummaryPlot(QGroupBox):
     def __init__(self):
@@ -216,8 +283,89 @@ class SummaryPlot(QGroupBox):
     
     def chooseplottype(self): 
         sender = self.sender()
-        plottype = sender.text()
-        print(plottype)
+        self.plottype = sender.text()
+        print(self.plottype)
+        
+class SummaryData(QGroupBox):
+    def __init__(self):
+        super(SummaryData, self).__init__()
+        
+        self.setTitle("Summary Quantity Data")
+        
+        self.filebutton = QPushButton("Choose File")
+        self.filelabel = QLabel("")
+        
+        filelayout = QHBoxLayout()
+        filelayout.addWidget(self.filebutton)
+        filelayout.addWidget(self.filelabel) 
+        
+        self.tempdatabutton = QRadioButton("Temperature summary qtys")
+        self.magdatabutton = QRadioButton("Magnet summary qtys")
+        self.regendatabutton = QRadioButton("Regen summary qtys")
+        self.coolwarmbutton = QRadioButton("Cooldown/warmup time")
+    
+        buttonlayout = QVBoxLayout()
+        buttonlayout.addWidget(self.tempdatabutton)
+        buttonlayout.addWidget(self.magdatabutton)
+        buttonlayout.addWidget(self.regendatabutton)
+        buttonlayout.addWidget(self.coolwarmbutton)
+        
+        self.viewbutton = QPushButton("View data")
+        self.savebutton = QPushButton("Save data")
+        
+        actionlayout = QHBoxLayout()
+        actionlayout.addWidget(self.viewbutton)
+        actionlayout.addWidget(self.savebutton)
+
+        layout = QVBoxLayout()
+        layout.addLayout(filelayout)
+        layout.addLayout(buttonlayout)
+        layout.addLayout(actionlayout)
+        self.setLayout(layout)
+        
+        self.filebutton.clicked.connect(self.open_file)
+        self.tempdatabutton.pressed.connect(self.choosecsvtype)
+        self.magdatabutton.pressed.connect(self.choosecsvtype)
+        self.regendatabutton.pressed.connect(self.choosecsvtype)
+        self.coolwarmbutton.pressed.connect(self.choosecsvtype)
+        self.viewbutton.clicked.connect(self.viewdata)
+        self.savebutton.clicked.connect(self.save_file)
+    
+    def open_file(self):
+        path = QFileDialog.getOpenFileName(self, "Open")[0]
+        if path:
+            self.logs = cryo.split_107(cryo.load_107(path))
+            self.filelabel.setText(str(self.logs[0]['log1'].iloc[0,0])[:10] + ' log') 
+            cryo.temp_hold(self.logs[2])
+    
+    def choosecsvtype(self): 
+        sender = self.sender()
+        self.csvtype = sender.text()
+        if self.csvtype == "Temperature summary qtys":
+            tempqtys = cryo.temp_summary(self.logs[2], 107)
+            self.data = cryo.temp_summary_combine(tempqtys, 107)
+        elif self.csvtype == "Magnet summary qtys":
+            self.data = cryo.hold_summary(self.logs[2])
+        elif self.csvtype == "Regen summary qtys":
+            self.data = cryo.regen_summary(self.logs[1])
+        elif self.csvtype == "Cooldown/warmup time":
+            self.coollog = self.logs[0]['log1']
+            self.warmlog = self.logs[0]['log{}'.format(str(len(self.logs[0])))]
+
+    def viewdata(self):
+        if self.csvtype != "Cooldown/warmup time":
+            self.tablewindow = TableWindow(self.data)
+            self.tablewindow.show() 
+        elif self.csvtype == "Cooldown/warmup time":
+            self.coolwarmdialog = CoolWarmWindow(self.coollog,self.warmlog) 
+            self.coolwarmdialog.show()    
+    
+    def save_file(self):
+        path = QFileDialog.getSaveFileName(self, "Save As",  '', "Excel (*.csv)")[0]
+        print(path)
+        if path:
+            self.data.to_csv(path)
+    
         
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -226,11 +374,13 @@ class MainWindow(QMainWindow):
         self.Q1 = SinglePhasePlot()
         self.Q2 = MultiplePhasePlot()
         self.Q3 = SummaryPlot()
+        self.Q4 = SummaryData()
         
         layout = QGridLayout()
         layout.addWidget(self.Q1, 0, 0)
         layout.addWidget(self.Q2, 0, 1)
         layout.addWidget(self.Q3, 1, 0)
+        layout.addWidget(self.Q4, 1, 1)
         
         widget = QWidget()
         widget.setLayout(layout)
@@ -238,7 +388,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(widget)
         
         
-        
+   
 app = QApplication(sys.argv)
 
 window = MainWindow()
@@ -247,6 +397,16 @@ window.show()
 app.exec_() 
 
 
+
+#logs = cryo.split_107(cryo.load_107(r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2020_06_18_17;08snout_swissx2_1BM.csv"))
+'''
+coollog = logs[0]['log1']
+warmlog = logs[0]['log{}'.format(str(len(logs[0])))]
+app = QApplication(sys.argv)
+window = CoolWarmWindow(coollog,warmlog)
+window.show()
+app.exec_()
+'''
 
 
 

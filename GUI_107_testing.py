@@ -4,6 +4,7 @@ Created on Sun Nov  8 22:07:14 2020
 
 @author: Goldfishy
 """
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -83,11 +84,50 @@ class SummaryPlot(QGroupBox):
         
         print(type(paths))
         print(paths)
+        
+class TableModel(QtCore.QAbstractTableModel):
+    """
+    Class to populate a table view with a pandas dataframe
+    """
+    def __init__(self, data, parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return self._data.shape[0]
+
+    def columnCount(self, parent=None):
+        return self._data.shape[1]
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return str(self._data.iloc[index.row(), index.column()])
+        return None
+
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self._data.columns[col]
+        return None
+    
+class TableWindow(QMainWindow):
+    def __init__(self, data):
+        super().__init__()
+        
+        self.data = data
+        self.table = QtWidgets.QTableView()
+        self.model = TableModel(self.data)
+        self.table.setModel(self.model)
+        self.setCentralWidget(self.table)
     
     
 app = QApplication(sys.argv)
 
-window = SummaryPlot()
+d = {'col1': [1, 2], 'col2': [3, 4]}
+data = pd.DataFrame(data=d)
+
+window = TableWindow(data)
+
 window.show()
 
 app.exec_()
