@@ -1,5 +1,5 @@
 import numpy as np
-from scipy import stats 
+from scipy import stats
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -729,7 +729,5 @@ def temp_minmaxmean():
         dates = temps.index
         #Create stacked error bar plot showing min, max, and mean of temperature stage versus date of temperature hold
         ax.errorbar(dates, means, [means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
-    return fig 
+    return fig
 
-#log=load_107(r"C:/Users/Goldfishy/Documents/Argonne 2020/Cyrostat Scrips/2020_06_18_17;08snout_swissx2_1BM.csv")
-#print(str(log.iloc[0,0])[:10])
