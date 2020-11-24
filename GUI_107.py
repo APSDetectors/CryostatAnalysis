@@ -398,15 +398,6 @@ app.exec_()
 
 
 
-#logs = cryo.split_107(cryo.load_107(r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2020_06_18_17;08snout_swissx2_1BM.csv"))
-'''
-coollog = logs[0]['log1']
-warmlog = logs[0]['log{}'.format(str(len(logs[0])))]
-app = QApplication(sys.argv)
-window = CoolWarmWindow(coollog,warmlog)
-window.show()
-app.exec_()
-'''
 
 
 

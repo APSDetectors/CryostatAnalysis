@@ -588,7 +588,7 @@ def coolwarm_time(coolwarm_log):
     #Check if log includes full cooldown or warmup 
     if coolwarm_log['50 mK FAA'].between(284,286).any() and coolwarm_log['50 mK FAA'].between(3.5,4.5).any():
         #Cooldown/warmup defined as 50 mK stage above 3.5 K and below 286 K
-        coolwarm_log = coolwarm_log.loc[(log['50 mK FAA']<286) & (coolwarm_log['50 mK FAA']>3.5)]
+        coolwarm_log = coolwarm_log.loc[(coolwarm_log['50 mK FAA']<286) & (coolwarm_log['50 mK FAA']>3.5)]
         coolwarm_log.reset_index(drop=True, inplace = True)
         coolwarm_log["Hours after Start"] = (coolwarm_log['Date/Time']-coolwarm_log.iloc[0,0]).dt.total_seconds()/3600
         coolwarm_time = coolwarm_log.iloc[-1,1] #Cooldown/warmup time is last entry of "Hours after Start" column 
@@ -731,5 +731,5 @@ def temp_minmaxmean():
         ax.errorbar(dates, means, [means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
     return fig 
 
-log=load_107(r"C:/Users/Goldfishy/Documents/Argonne 2020/Cyrostat Scrips/2020_06_18_17;08snout_swissx2_1BM.csv")
-print(str(log.iloc[0,0])[:10])
+#log=load_107(r"C:/Users/Goldfishy/Documents/Argonne 2020/Cyrostat Scrips/2020_06_18_17;08snout_swissx2_1BM.csv")
+#print(str(log.iloc[0,0])[:10])
