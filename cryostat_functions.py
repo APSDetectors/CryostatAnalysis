@@ -287,30 +287,32 @@ The functions below create plots for several cryostat phases (e.g. all magnet cy
 
 '''
 
-def regen_temp_plots(regenfiles):
+def regen_temp_plots(regenfiles,window):
     '''
     Creates temperature plots for all magnet cycles in a run
+    Figure contains a variable number of subplots depending on the number of magnet cycles in the run
+    Each subplot shows temperature of cold stage and temperature setpoint versus time
 
     Parameters
     ----------
     regenfiles : dict
         Dictionary containing magnet cycle stage logs
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    fig : figure
-        Figure containing a variable number of subplots depending on the number of magnet cycles in the run
-        Each subplot shows temperature of cold stage and temperature setpoint versus time
+    None.
+
     '''
-    tot = len(regenfiles)
+    tot = len(regenfiles) #
     col = 3
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    fig = plt.figure(1)
     maxtime = np.max([regen.iloc[-1,1] for regen in regenfiles.values()]) #Determine length of longest magnet cycle 
     for i in range(tot):
-        ax = fig.add_subplot(row,col,position[i])
+        ax = window.canvas.fig.add_subplot(row,col,position[i])
         ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
         ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,7], '-', label='Temperature Setpoint') #Plot temperature setpoint
         ax.set_xlabel('Hours after Regen')
@@ -319,9 +321,8 @@ def regen_temp_plots(regenfiles):
         ax.set_ylim(0,6)
         ax.legend(loc='upper right')  
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
-    return fig
 
-def regen_mag_plots(regenfiles):
+def regen_mag_plots(regenfiles, window):
     '''
     Creates plots of magnet current and voltage for all magnet cycles in a run
 
@@ -342,10 +343,9 @@ def regen_mag_plots(regenfiles):
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    fig = plt.figure(2)
     maxtime = np.max([regen.iloc[-1,1] for regen in regenfiles.values()]) #Determine length of longest magnet cycle 
     for i in range(tot):
-        ax = fig.add_subplot(row,col,position[i])
+        ax = window.canvas.fig.add_subplot(row,col,position[i])
         PS_I=ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,8], 'g-', label='Magnet Current') #Plot magnet current
         ax.set_xlabel('Hours after Regen')
         ax.set_ylabel('Magnet Current (A)')
@@ -359,9 +359,8 @@ def regen_mag_plots(regenfiles):
         labs = [l.get_label() for l in axs]
         ax.legend(axs, labs, loc='center')
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
-    return fig
 
-def reg_temp_plots(regfiles):
+def reg_temp_plots(regfiles, window):
     '''
     Creates temperature plots for all temperature holds in a run 
 
@@ -382,21 +381,19 @@ def reg_temp_plots(regfiles):
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    fig = plt.figure(3)
     maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) #Determine length of longest temperature hold
     for i in range(tot):
-        ax = fig.add_subplot(row,col,position[i])
+        ax = window.canvas.fig.add_subplot(row,col,position[i])
         ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
         ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,7], '-', label='Temperature Setpoint') #Plot temperature setpoint
         ax.set_xlabel('Hours after Reg')
         ax.set_ylabel('Temperature (K)')
         ax.set_xlim(-1,maxtime+1) #Set x axis limits based on longest temperature hold
-        ax.set_ylim(0.035,0.075)
-        ax.legend(loc='upper left') 
+        ax.set_ylim(0.030,0.080)
+        ax.legend(loc='upper right') 
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
-    return fig
 
-def reg_mag_plots(regfiles):
+def reg_mag_plots(regfiles, window):
     '''
     Creates plots of magnet current and voltage for multiple temperature holds
 
@@ -417,26 +414,24 @@ def reg_mag_plots(regfiles):
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    fig = plt.figure(4)
     maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) #Determine length of longest temperature hold
     for i in range(tot):
-        ax = fig.add_subplot(row,col,position[i])
+        ax = window.canvas.fig.add_subplot(row,col,position[i])
         PS_I=ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,8], 'g-', label='Magnet Current') #Plot magnet current
         ax.set_xlabel('Hours after Reg')
         ax.set_ylabel('Magnet Current (A)')
         ax.set_xlim(-1,maxtime+1) #Set x axis limits based on longest temperature hold
-        ax.set_ylim(0,0.7)
+        ax.set_ylim(0,0.8)
         ax2 = ax.twinx()
         PS_V=ax2.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,9],'r-', label='Magnet Voltage') #Plot magnet voltage
         ax2.set_ylabel('Magnet Voltage (V)')
-        ax2.set_ylim(0,7)
+        ax2.set_ylim(0,8)
         axs = PS_I+PS_V
         labs = [l.get_label() for l in axs]
         ax.legend(axs, labs, loc='upper right')
         plt.subplots_adjust(wspace = 0.5, hspace=0.75)
-    return fig
 
-def reg_3K_plots(regfiles):
+def reg_3K_plots(regfiles, window):
     '''
     Creates temperature plots of 3K stage for all temperature hold phases of a run 
 
@@ -457,10 +452,9 @@ def reg_3K_plots(regfiles):
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    fig = plt.figure(5)
     maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) #Determine length of longest temperature hold
     for i in range(tot):
-        ax = fig.add_subplot(row,col,position[i])
+        ax = window.canvas.fig.add_subplot(row,col,position[i])
         ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,4], '-', label='3K Stage Diode') #Plot 3K stage
         ax.set_xlabel('Hours after Reg')
         ax.set_ylabel('Temperature (K)')
@@ -468,7 +462,6 @@ def reg_3K_plots(regfiles):
         ax.set_ylim(2.3,3.7)
         ax.legend(loc='upper left') 
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
-    return fig
 
 '''
 
@@ -643,30 +636,33 @@ def regen_summary(regenfiles):
 '''
 
 The functions below create various summary quantity plots for multiple log files 
-Unlike previous plot functions, these functions take no parameters and instead take user input
 They are specific to 107 log files
 
 '''
 
-def maxcurrent_holdtime(): 
+def maxcurrent_holdtime(loglist, window): 
     '''
-    Creates plot of maximum magnet current versus hold time for temperature holds across multiple log files. 
-    Takes user input for number of log files and log filepaths
-    
+    Scatter plot of maximum magnet current versus hold time for temperature holds across multiple log files
+    Each log file has a unique marker color; legend shows date of each log file
+
+    Parameters
+    ----------
+    loglist : list
+        List of 107 log filepaths
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
+
     Returns
     -------
-    fig : figure
-        Scatter plot of maximum magnet current versus hold time for temperature holds across multiple log files
-        Each log file has a unique marker color; legend shows date of each log file
+    None.
 
     '''
-    fig = plt.figure(6)
-    ax = fig.add_subplot(111)
+    ax = window.canvas.fig.add_subplot(111) #Add subplot to figure of MPL canvas in window and assign it to varible ax
     ax.set_xlabel('Hold Time (hrs)')
     ax.set_ylabel('Max Current (A)')
-    num = int(input('How many log files? ')) #Ask user for number of log files 
+    num = len(loglist) #Number of log files 
     for i in range(num): #Loop through number of log files 
-        log = load_107() #Ask user for log filepath
+        log = load_107(loglist[i]) #Load and process each log file
         label = str(log.iloc[0,0])[:10]
         dicts = split_107(log)
         regs = temp_hold(dicts[2]) #Dictionary of all, revised temperature hold logs
@@ -674,60 +670,65 @@ def maxcurrent_holdtime():
         #Plot max current vs. hold time 
         ax.scatter(hold.loc[:,'Hold Time'],hold.loc[:,'Max Current'], s=10, marker="s", label=label)
     ax.legend(loc = 'upper right')
-    return fig
 
-def stddev_time():
+def stddev_time(loglist,window):
     '''
-    Creates plot of 50 mK stage standard deviation versus date of temperature hold for temperature holds across multiple log files
-    Takes user input for number of log files and log filepaths
-        
+    Creates scatter plot of 50 mK stage standard deviation versus date of temperature hold for temperature holds across multiple log files
+
+    Parameters
+    ----------
+    loglist : list
+        List of 107 log filepaths
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
+
     Returns
     -------
-    fig : figure
-        Scatter plot of 50 mK stage standard deviation versus date of temperature hold for temperature holds across multiple log files
+    None.
 
     '''
-    fig = plt.figure(7)
-    ax = fig.add_subplot(111)
+    ax = window.canvas.fig.add_subplot(111) #Add subplot to figure of MPL canvas in window and assign it to varible ax
     ax.set_xlabel('Date')
     ax.set_ylabel('50 mK Std Dev')
     ax.set_ylim(-0.001,0.002) #Y-axis limits may need to be manually adjusted 
-    num = int(input('How many log files? ')) #Ask user for number of log files
+    num = len(loglist) #Number of log files
     for i in range(num): #Loop through number of log files
-        log = load_107() #Ask user for log filepath 
+        log = load_107(loglist[i]) #Load and process each log file
         dicts = split_107(log)
         regs = temp_hold(dicts[2]) #Dictionary of all, revised temperature hold logs
-        temp = temp_summary(regs)['50 mK'] #DataFrame of temperature-related summary quantities for 50 mK stage
+        temp = temp_summary(regs,107)['50 mK'] #DataFrame of temperature-related summary quantities for 50 mK stage
         x = temp.index #Get date and time of each temperature hold 
         ax.scatter(x,temp.loc[:,'50 mK std dev'], s=10, marker="s") #Plot 50 mK std dev versus date of temp hold
-    return fig
 
-def temp_minmaxmean(): 
+def temp_minmaxmean(loglist, window): 
     '''
-    Creates plot of min, max, and mean of a temperature stage versus date of temperature hold for temperature holds across multiple log files
-    Takes user input for number of log files and log filepaths
+    Creates stacked error bar plot of min, max, and mean of 3K stage versus date of temperature hold for temperature holds across multiple log files
+
+    Parameters
+    ----------
+    loglist : list
+        List of 107 log filepaths
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    fig : figure
-        Stacked error bar plot of min, max, and mean of a temperature stage versus date of temperature hold for temperature holds across multiple log files
+    None.
 
     '''
-    fig = plt.figure(8)
-    ax = fig.add_subplot(111)
+    ax = window.canvas.fig.add_subplot(111)  #Add subplot to figure of MPL canvas in window and assign it to varible ax
     ax.set_xlabel('Date')
     ax.set_ylabel('Temp (K)')
-    num = int(input('How many log files? ')) #Ask user for number of log files
-    for i in range(num):#Loop through number of log files
-        log = load_107() #Ask user for log filepath
+    num = len(loglist) #Number of log files
+    for i in range(num): #Loop through number of log files
+        log = load_107(loglist[i]) #Load and process each log file 
         dicts = split_107(log)
         regs = temp_hold(dicts[2]) #Dictionary of all, revised temperature hold logs
-        temps = temp_summary_combine(temp_summary(regs)) #DataFrame of temperature-related summary quantities for all temperature stages and all temperature holds
-        mins = temps['50 K min'] #Manually change temperature stage by changing column names
-        maxes = temps['50 K max']
-        means = temps['50 K mean']
+        temps = temp_summary_combine(temp_summary(regs,107),107) #DataFrame of temperature-related summary quantities for all temperature stages and all temperature holds
+        mins = temps['3 K min'] #Other temperature stages can be analyzed by manually changing the column names
+        maxes = temps['3 K max']
+        means = temps['3 K mean']
         dates = temps.index
         #Create stacked error bar plot showing min, max, and mean of temperature stage versus date of temperature hold
         ax.errorbar(dates, means, [means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
-    return fig
 

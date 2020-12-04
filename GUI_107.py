@@ -223,6 +223,7 @@ class MultiplePhasePlot(QGroupBox):
         self.regtempbutton.pressed.connect(self.chooseplottype)
         self.regmagbutton.pressed.connect(self.chooseplottype)
         self.reg3kbutton.pressed.connect(self.chooseplottype)
+        self.plotbutton.pressed.connect(self.show_plot)
         
     def open_file(self):
         path = QFileDialog.getOpenFileName(self, "Open")[0]
@@ -235,6 +236,16 @@ class MultiplePhasePlot(QGroupBox):
         sender = self.sender()
         self.plottype = sender.text()
         print(self.plottype)
+        
+    def show_plot(self):
+        self.plotwindow = PlotWindow()
+        typefunc = {"Mag cycle 50 mK temp":cryo.regen_temp_plots, "Mag cycle current":cryo.regen_mag_plots, "Temp hold 50 mK temp": cryo.reg_temp_plots, "Temp hold current": cryo.reg_mag_plots, "Temp hold 3K temp":cryo.reg_3K_plots}
+        if 'Mag cycle' in self.plottype:
+            typefunc[self.plottype](self.logs[1],self.plotwindow)
+        elif "Temp hold" in self.plottype:
+            typefunc[self.plottype](self.logs[2],self.plotwindow)
+        
+        
     
 class SummaryPlot(QGroupBox):
     def __init__(self):
@@ -270,14 +281,14 @@ class SummaryPlot(QGroupBox):
         self.maxcurrentbutton.pressed.connect(self.chooseplottype)
         self.stddevbutton.pressed.connect(self.chooseplottype)
         self.tempqtysbutton.pressed.connect(self.chooseplottype)
+        self.plotbutton.pressed.connect(self.show_plot)
         
     def open_files(self):
-        paths = QFileDialog.getOpenFileNames(self, "Open")[0]
-        if paths: 
+        self.paths = QFileDialog.getOpenFileNames(self, "Open")[0]
+        if self.paths: 
             dates = ""
-            for i in paths: 
+            for i in self.paths: 
                 firstrows = pd.read_csv(r'{}'.format(i), nrows = 3)
-                print(firstrows)
                 dates += str(firstrows.iloc[2,0][:10] + ' log')  + '\n'
             self.filelabel.setText(dates) 
     
@@ -285,6 +296,11 @@ class SummaryPlot(QGroupBox):
         sender = self.sender()
         self.plottype = sender.text()
         print(self.plottype)
+    
+    def show_plot(self): 
+        self.plotwindow = PlotWindow()
+        typefunc = {"Max current vs. hold time":cryo.maxcurrent_holdtime, "50 mK std dev vs. date":cryo.stddev_time, "50 mK temperature qtys vs. date":cryo.temp_minmaxmean}
+        typefunc[self.plottype](self.paths,self.plotwindow)
         
 class SummaryData(QGroupBox):
     def __init__(self):

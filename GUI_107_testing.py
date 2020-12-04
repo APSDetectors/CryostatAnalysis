@@ -120,14 +120,11 @@ class TableWindow(QMainWindow):
         self.table.setModel(self.model)
         self.setCentralWidget(self.table)
     
-    
+
 app = QApplication(sys.argv)
+loglist = [r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2019_08_23_09;43snout_swissx_M-451.csv",r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2019_11_01_17;38snout_swissx_M-452x2_1BM.csv",r"C:\Users\Goldfishy\Documents\Argonne 2020\Cyrostat Scrips\2020_06_18_17;08snout_swissx2_1BM.csv"]
+plotwindow = PlotWindow()
+cryo.temp_minmaxmean(loglist,plotwindow)
 
-d = {'col1': [1, 2], 'col2': [3, 4]}
-data = pd.DataFrame(data=d)
-
-window = TableWindow(data)
-
-window.show()
-
+plotwindow.show()
 app.exec_()
