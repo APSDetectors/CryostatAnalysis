@@ -89,11 +89,11 @@ class CoolWarmWindow(QWidget):
         self.warmbutton.pressed.connect(self.warmtime)
 
     def cooltime(self):
-        text = str(cryo.coolwarm_time(self.coollog))
+        text = str(round(cryo.coolwarm_time(self.coollog),3))
         self.time.setText(text + ' hours')
         
     def warmtime(self):
-        text = str(cryo.coolwarm_time(self.warmlog))
+        text = str(round(cryo.coolwarm_time(self.warmlog),3))
         self.time.setText(text + ' hours')
        
 class SinglePhasePlot(QGroupBox):
@@ -168,7 +168,6 @@ class SinglePhasePlot(QGroupBox):
         
     def choose_phase(self):
         self.phaseindex = self.choosephase.currentIndex()
-        print(self.phaseindex)
             
     def show_plot(self):
         self.plotwindow = PlotWindow()
@@ -235,7 +234,6 @@ class MultiplePhasePlot(QGroupBox):
     def chooseplottype(self): 
         sender = self.sender()
         self.plottype = sender.text()
-        print(self.plottype)
         
     def show_plot(self):
         self.plotwindow = PlotWindow()
@@ -295,7 +293,6 @@ class SummaryPlot(QGroupBox):
     def chooseplottype(self): 
         sender = self.sender()
         self.plottype = sender.text()
-        print(self.plottype)
     
     def show_plot(self): 
         self.plotwindow = PlotWindow()
@@ -378,7 +375,6 @@ class SummaryData(QGroupBox):
     
     def save_file(self):
         path = QFileDialog.getSaveFileName(self, "Save As",  '', "Excel (*.csv)")[0]
-        print(path)
         if path:
             self.data.to_csv(path)
     
