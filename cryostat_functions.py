@@ -690,7 +690,7 @@ def stddev_time(loglist,window):
     ax = window.canvas.fig.add_subplot(111) #Add subplot to figure of MPL canvas in window and assign it to varible ax
     ax.set_xlabel('Date')
     ax.set_ylabel('50 mK Std Dev')
-    ax.set_ylim(-0.001,0.002) #Y-axis limits may need to be manually adjusted 
+    ax.set_ylim(0, 0.002) #Y-axis limits may need to be manually adjusted 
     num = len(loglist) #Number of log files
     for i in range(num): #Loop through number of log files
         log = load_107(loglist[i]) #Load and process each log file
