@@ -6,21 +6,27 @@ import pandas as pd
 
 '''
 
-The functions below load, reformat, split, revise, and sort log files
+The functions below load, reformat, split, revise, and sort cryostat log files
 
 '''
 
+
 def load_107(filepath):
     '''
-    Loads and reformats relevant columns of a 107 log
+    Loads and reformats relevant columns of a 107 log 
+
+    Parameters
+    ----------
+    filepath : str
+        Filepath of individual, complete 107 log 
 
     Returns
     -------
     log_107 : DataFrame
-        Reformatted 107 log
+        Loaded, reformatted 107 log
 
     '''
-    #Load 107 log
+    #Load relevant columns 107 log
     log_filepath = r'{}'.format(filepath)
     log_107 = pd.read_csv(log_filepath, usecols = [0,1,2,3,5,7,8,9,12,13,18], skiprows = [1,2], na_filter=False)
     #Reorder and rename columns
@@ -28,29 +34,34 @@ def load_107(filepath):
     column_names = ['Date/Time','Hours after Start','50 mK FAA','He-3','3K Stage Diode','Magnet Diode','50K Stage Diode','Temperature Setpoint','Magnet Current','Magnet Voltage','Notes']
     log_107 = log_107[[log_107.columns[i] for i in column_order]]
     log_107.columns = column_names 
-    #Convert "Date/Time" column from string to datetime 
+    #Convert type of "Date/Time" column from string to datetime 
     log_107['Date/Time'] = pd.to_datetime(log_107['Date/Time'], infer_datetime_format=True)
     return log_107
 
-def load_102():
+def load_102(filepath):
     '''
-    Loads and reformats relevant columns of a 102 log
+    Loads and reformats relevant columns of a 102 log 
+
+    Parameters
+    ----------
+    filepath : str
+        Filepath of individual, complete 102 log 
 
     Returns
     -------
     log_102 : DataFrame
-        Reformatted 102 log
+        Loaded, reformatted 102 log
 
     '''
-    #Load 102 log
-    log_filepath = r'{}'.format(input('Enter filepath: ')) #Asks user for filepath. Enter filepath without quotation marks.  
+    #Load relevant columns of 102 log
+    log_filepath = r'{}'.format(filepath) 
     log_102=pd.read_csv(log_filepath, usecols = [0,1,2,3,5,8,10,11,12,13,15], na_filter=False)
     #Reorder and rename columns
     column_order = [0,1,6,10,8,9,7,5,4,3,2]
     column_names = ['Date/Time','Hours after Start','50 mK FAA','ADR 1K', '3K Stage Diode','Magnet Diode','60K Stage Diode','Temperature Setpoint','Magnet Current','Magnet Voltage','Notes']
     log_102 = log_102[[log_102.columns[i] for i in column_order]]
     log_102.columns = column_names 
-    #Convert "Date/Time" column from string to datetime 
+    #Convert type of "Date/Time" column from string to datetime 
     log_102['Date/Time'] = pd.to_datetime(log_102['Date/Time'], infer_datetime_format=True)
     #Recalculate "Hours after Start" column from "Date/Time" column
     log_102["Hours after Start"] = (log_102['Date/Time']-log_102.iloc[0,0]).dt.total_seconds()/3600
@@ -58,8 +69,8 @@ def load_102():
 
 def split_107(log):
     '''
-    Splits a reformatted 107 log into separate logs for separate stages (i.e. cooldown, regen, reg, and warmup)
-    Stores separated logs into a tuple of 3 dictionaries
+    Splits a reformatted 107 log into separate logs for separate phases (i.e. cooldown, regen, reg, and warmup phases)
+    Stores separated logs into 3 dictionaries
     
     Parameters
     ----------
@@ -74,69 +85,84 @@ def split_107(log):
     regenfiles : dict
         Dictionary of reformatted, sorted regen logs
         Key names are 'regen1','regen2','regen3',... with numbers based on chronological order
-        Logs are reformatted: index and 'Hours from Start' start at 0 for each log 
+        Logs are reformatted: index and 'Hours from Start' start at 0 for each phase 
         Logs are sorted: if the magnet does not turn on or the magnet cycle is too short/long, it is excluded from this dictionary
     regfiles : dict
         Dictionary of reformatted, sorted reg logs
         Key names are 'reg1','reg2','reg3',... with numbers based on chronological order
-        Logs are reformatted: index and 'Hours from Start' start at 0 for each log 
+        Logs are reformatted: index and 'Hours from Start' start at 0 for each phase
         Logs are sorted: if the magnet current is too small/large, it is excluded from this dictionary
     '''
-    #Create a dictionary storing logs of all stages 
-    all_booleans = log['Notes'].map(lambda x:'Start Mag Cycle' in x or 'Mag Cycle complete' in x or 'Mag Cycle Canceled' in x).to_list() #Determine ADR cycle start and completion via Notes column
+    #Create a dictionary storing logs of all phases 
+    
+    #Determine ADR cycle start and completion via Notes column
+    all_booleans = log['Notes'].map(lambda x:'Start Mag Cycle' in x or 'Mag Cycle complete' in x or 'Mag Cycle Canceled' in x).to_list() 
     all_booleans[0] = True
     all_booleans[-1] = True
-    all_indicies = log.index[all_booleans].to_list() #Create list of indicies where run starts, run completes, ADR cycle starts, and ADR cycle completes
+    #Create list of indicies where run starts, run completes, ADR cycle starts, and ADR cycle completes
+    all_indicies = log.index[all_booleans].to_list() 
     logs = {} #Initialize dictionary 
     for x in range(len(all_indicies)-1):
-        logs['log{}'.format(x+1)]=log.iloc[all_indicies[x]:all_indicies[x+1],:] #Add each log to dictionary 
+        #Add each log to dictionary 
+        logs['log{}'.format(x+1)]=log.iloc[all_indicies[x]:all_indicies[x+1],:] 
     
     
     #Create a dictionary storing regen logs
-    regen_booleans = log['Notes'].map(lambda x:'Start Mag Cycle' in x).to_list() #Determine ADR cycle start via Notes column
-    regen_indicies = log.index[regen_booleans].to_list() #Create list of indicies where ADR cycle starts
+    
+    #Determine ADR cycle start via Notes column
+    regen_booleans = log['Notes'].map(lambda x:'Start Mag Cycle' in x).to_list() 
+    #Create list of indicies where ADR cycle starts
+    regen_indicies = log.index[regen_booleans].to_list() 
     regenfiles = {} #Initialize dictionary 
     regen_count = 0 #Counter variable for naming dictionary keys 
     for x in range(len(regen_indicies)):
         #Check if magnet turns on (current reaches above 15 A) and if magnet cycle lasts appropriate length of time (between 3 to 5 hours)
         if log.iloc[regen_indicies[x]:all_indicies[all_indicies.index(regen_indicies[x])+1],8].map(lambda x:x>15).any() and \
         3<((log.iloc[all_indicies[all_indicies.index(regen_indicies[x])+1],0]-log.iloc[regen_indicies[x],0]).total_seconds()/3600)<5:
-            regen_count += 1 #Increase counter variable 
-            regenfiles['regen{}'.format(regen_count)]=log.iloc[regen_indicies[x]:all_indicies[all_indicies.index(regen_indicies[x])+1],:].reset_index(drop=True) #Add regen log to dictionary and reset index 
-            regenfiles['regen{}'.format(regen_count)]["Hours after Start"] = (regenfiles['regen{}'.format(regen_count)]['Date/Time']-regenfiles['regen{}'.format(regen_count)].iloc[0,0]).dt.total_seconds()/3600 #Reset "Hours from Start" column
+            regen_count += 1 
+            #Add regen log to dictionary and reset index 
+            regenfiles['regen{}'.format(regen_count)]=log.iloc[regen_indicies[x]:all_indicies[all_indicies.index(regen_indicies[x])+1],:].reset_index(drop=True) 
+            #Reset "Hours from Start" column 
+            regenfiles['regen{}'.format(regen_count)]["Hours after Start"] = (regenfiles['regen{}'.format(regen_count)]['Date/Time']-regenfiles['regen{}'.format(regen_count)].iloc[0,0]).dt.total_seconds()/3600 
     
     
     #Create a dictionary storing reg logs
-    reg_booleans = log['Notes'].map(lambda x:'Mag Cycle complete' in x or 'Mag Cycle Canceled' in x).to_list() #Determine ADR cycle completion via Notes column
-    reg_indicies = log.index[reg_booleans].to_list() #Create list of indicies where ADR cycle completes
+    
+    #Determine ADR cycle completion via Notes column
+    reg_booleans = log['Notes'].map(lambda x:'Mag Cycle complete' in x or 'Mag Cycle Canceled' in x).to_list() 
+    #Create list of indicies where ADR cycle completes
+    reg_indicies = log.index[reg_booleans].to_list() 
     regfiles = {} #Initialize dictionary 
     reg_count = 0 #Counter variable for naming dictionary keys 
     for x in range(len(reg_indicies)):
         #Check if magnet current is reasonable (above 0.1 A and below 2 A)
         if not log.iloc[reg_indicies[x]:all_indicies[all_indicies.index(reg_indicies[x])+1],8].map(lambda x:x<0.1).all() and \
         not log.iloc[reg_indicies[x]:all_indicies[all_indicies.index(reg_indicies[x])+1],8].map(lambda x:x>2).any():
-            reg_count += 1 #Increase counter variable 
-            regfiles['reg{}'.format(reg_count)]=log.iloc[reg_indicies[x]:all_indicies[all_indicies.index(reg_indicies[x])+1],:].reset_index(drop=True) #Add reg log to dictionary and reset index
-            regfiles['reg{}'.format(reg_count)]["Hours after Start"] = (regfiles['reg{}'.format(reg_count)]['Date/Time']-regfiles['reg{}'.format(reg_count)].iloc[0,0]).dt.total_seconds()/3600 #Reset "Hours from Start" column 
-            regfiles['reg{}'.format(reg_count)]['50 mK FAA'].replace(0,np.nan,inplace=True) #Replace 0 values in "50 mK FAA" column with NaN 
+            reg_count += 1 
+            #Add reg log to dictionary and reset index
+            regfiles['reg{}'.format(reg_count)]=log.iloc[reg_indicies[x]:all_indicies[all_indicies.index(reg_indicies[x])+1],:].reset_index(drop=True) 
+            #Reset "Hours from Start" column 
+            regfiles['reg{}'.format(reg_count)]["Hours after Start"] = (regfiles['reg{}'.format(reg_count)]['Date/Time']-regfiles['reg{}'.format(reg_count)].iloc[0,0]).dt.total_seconds()/3600 
+            #Replace 0 values in "50 mK FAA" column with NaN 
+            regfiles['reg{}'.format(reg_count)]['50 mK FAA'].replace(0,np.nan,inplace=True) 
     
     
     return (logs,regenfiles,regfiles)
 
 def temp_hold(regfiles):
     '''
-    Removes sections of temperature hold logs where the magnet is off (i.e. current is less than 0.085 A)
+    Removes portions of temperature hold logs where the magnet is off (i.e. current is less than 0.085 A)
     E.g. if a temperature hold log includes a warmup, the warmup is removed 
 
     Parameters
     ----------
-    reg_logs : dict
-        Dictionary of all temperature hold phase logs of a run 
+    regfiles : dict
+        Dictionary of all temperature hold phase logs. Return of split_107(). 
 
     Returns
     -------
-    reg_logs : dict
-        Dictionary of revised temperature regulation phase logs of a run 
+    regfiles : dict
+        Dictionary of revised temperature regulation phase logs.
 
     '''
     for key,reg in regfiles.items():
@@ -154,7 +180,7 @@ def sort_reg(regfiles):
     Parameters
     ----------
     regfiles : dict
-        Dictionary containing all temperature hold logs in the run
+        Dictionary containing all temperature hold logs
 
     Returns
     -------
@@ -170,73 +196,84 @@ def sort_reg(regfiles):
         holds['reg{}'.format(new)] = holds.pop('reg{}'.format(old))
     return (poor_holds,holds)
 
+
 '''
 
 The functions below create plots for a single cryostat phase
 
 '''
 
+
 def cooldown_plot(cooldown_log,window):
     '''
-    Creates plot for cooldown or warmup stage, showing temperatures of temperature stages versus time
+    Creates plot for cooldown or warmup phases, showing temperatures of each temperature stage versus time
 
     Parameters
     ----------
     cooldown_log : DataFrame
         DataFrame of cooldown or warmup data
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    cooldown_fig : figure
-        Figure of temperatures of temperature stages versus time
+    None.
 
     '''
     ax = window.canvas.fig.add_subplot(111)
-    ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,2], '-', label="50 mK FAA") #Plot 50 mK stage
-    ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,3], '-', label= cooldown_log.columns[3]) #Plot He-3 or ADR 1K stage, depending on log file type
-    #Plot 3K Stage Diode or Magnet Diode depending on log file type 
+    #Plot 50 mK stage
+    ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,2], '-', label="50 mK FAA") 
+    #Plot He-3 or ADR 1K stage for 107 or 102 logs, respectively 
+    ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,3], '-', label= cooldown_log.columns[3]) 
+    #Plot 3K Stage Diode or Magnet Diode for 107 and 102 logs, respectively 
     if cooldown_log.iloc[0,4]==500:
-        ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,5], '-', label="Magnet Diode") #Plot Magnet Diode 
+        ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,5], '-', label="Magnet Diode") 
     else:    
-        ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,4], '-', label="3K Stage Diode") #Plot 3K Stage Diode
-    ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,6], '-', label= cooldown_log.columns[6]) #Plot 50 K or 60 K stage, depending on log file type
+        ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,4], '-', label="3K Stage Diode") 
+    #Plot 50 K or 60 K stage for 107 and 102 logs, respectively 
+    ax.plot(cooldown_log.iloc[:,1], cooldown_log.iloc[:,6], '-', label= cooldown_log.columns[6]) 
     ax.set_xlabel('Time after start (hrs)')
     ax.set_ylabel('Temperature (K)')
     ax.legend(loc='upper right')
 
 def regen_plot(regen_log,window):
     '''
-    Creates two plots for a magnet cycle stage, one showing 50 mK temperature and one showing magnet current and voltage
+    Creates two plots for a magnet cycle phase, one showing 50 mK temperature and one showing magnet current and voltage, both versus time 
     
     Parameters
     ----------
     regen_log : DataFrame
         DataFrame of magnet cycle data
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    regen_plot : figure
-        Figure containing two subplots: 
-        Temperature of cold stage and temperature setpoint versus time
-        Magnet current and voltage versus time
+    None.
 
     '''
     ax1 = window.canvas.fig.add_subplot(121)
     ax2 = window.canvas.fig.add_subplot(122)
     
     #Temperature subplot
-    ax1.plot(regen_log.iloc[:,1], regen_log.iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
-    ax1.plot(regen_log.iloc[:,1], regen_log.iloc[:,7], '-', label='Temperature Setpoint') #Plot temperature setpoint
+    
+    #Plot 50 mK stage
+    ax1.plot(regen_log.iloc[:,1], regen_log.iloc[:,2], '-', label='50 mK FAA') 
+    #Plot temperature setpoint
+    ax1.plot(regen_log.iloc[:,1], regen_log.iloc[:,7], '-', label='Temperature Setpoint')
     ax1.set_xlabel('Time after start (hrs)')
     ax1.set_ylabel('Temperature (K)')
     ax1.legend(loc='upper right')
     
     #Magnet current and voltage subplot
-    PS_I=ax2.plot(regen_log.iloc[:,1], regen_log.iloc[:,8], 'g-', label='Magnet Current') #Plot magnet current 
+    
+    #Plot magnet current 
+    PS_I=ax2.plot(regen_log.iloc[:,1], regen_log.iloc[:,8], 'g-', label='Magnet Current') 
     ax2.set_xlabel('Time after start (hrs)')
     ax2.set_ylabel('Magnet Current (A)')
     ax3 = ax2.twinx()
-    PS_V=ax3.plot(regen_log.iloc[:,1], regen_log.iloc[:,9],'r-', label='Magnet Voltage') #Plot magnet voltage
+    #Plot magnet voltage
+    PS_V=ax3.plot(regen_log.iloc[:,1], regen_log.iloc[:,9],'r-', label='Magnet Voltage') 
     ax3.set_ylabel('Magnet Voltage (V)')
     axs = PS_I+PS_V
     labs = [l.get_label() for l in axs]
@@ -244,48 +281,56 @@ def regen_plot(regen_log,window):
 
 def reg_plot(reg_log,window):
     '''
-    Creates two plots for temperature hold stage, one showing 50 mK temperature and one showing magnet current and voltage
+    Creates two plots for temperature hold stage, one showing 50 mK temperature and one showing magnet current and voltage, both versus time 
     Creates same plots as regen_plot but with adjusted legend locations
     
     Parameters
     ----------
     reg_log : DataFrame
         DataFrame of temperature regulation data
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
+
 
     Returns
     -------
-    reg_plot : figure
-        Figure containing two subplots:     
-        Temperature of coldstage and temperature setpoint versus time 
-        Magnet current and voltage versus time
-
+    None.
+    
     '''
     ax1 = window.canvas.fig.add_subplot(121)
     ax2 = window.canvas.fig.add_subplot(122)
     
     #Temperature subplot
-    ax1.plot(reg_log.iloc[:,1], reg_log.iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
-    ax1.plot(reg_log.iloc[:,1], reg_log.iloc[:,7], '-', label='Temperature Setpoint') #Plot temperature setpoint
+    
+    #Plot 50 mK stage
+    ax1.plot(reg_log.iloc[:,1], reg_log.iloc[:,2], '-', label='50 mK FAA') 
+    #Plot temperature setpoint
+    ax1.plot(reg_log.iloc[:,1], reg_log.iloc[:,7], '-', label='Temperature Setpoint') 
     ax1.set_xlabel('Time after start (hrs)')
     ax1.set_ylabel('Temperature (K)')
     ax1.legend()
     
     #Magnet current and voltage subplot
-    PS_I=ax2.plot(reg_log.iloc[:,1], reg_log.iloc[:,8], 'g-', label='Magnet Current') #Plot magnet current
+    
+    #Plot magnet current
+    PS_I=ax2.plot(reg_log.iloc[:,1], reg_log.iloc[:,8], 'g-', label='Magnet Current') 
     ax2.set_xlabel('Time after start (hrs)')
     ax2.set_ylabel('Magnet Current (A)')
     ax3 = ax2.twinx()
-    PS_V=ax3.plot(reg_log.iloc[:,1], reg_log.iloc[:,9],'r-', label='Magnet Voltage') #Plot magnet voltage
+    #Plot magnet voltage
+    PS_V=ax3.plot(reg_log.iloc[:,1], reg_log.iloc[:,9],'r-', label='Magnet Voltage') 
     ax3.set_ylabel('Magnet Voltage (V)')
     axs = PS_I+PS_V
     labs = [l.get_label() for l in axs]
     ax2.legend(axs, labs, loc='upper right')
+    
 
 '''
 
 The functions below create plots for several cryostat phases (e.g. all magnet cycles in a run, all temp holds in a run)
 
 '''
+
 
 def regen_temp_plots(regenfiles,window):
     '''
@@ -305,37 +350,43 @@ def regen_temp_plots(regenfiles,window):
     None.
 
     '''
-    tot = len(regenfiles) #
+    tot = len(regenfiles) 
     col = 3
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    maxtime = np.max([regen.iloc[-1,1] for regen in regenfiles.values()]) #Determine length of longest magnet cycle 
+    #Determine length of longest magnet cycle 
+    maxtime = np.max([regen.iloc[-1,1] for regen in regenfiles.values()]) 
     for i in range(tot):
         ax = window.canvas.fig.add_subplot(row,col,position[i])
-        ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
-        ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,7], '-', label='Temperature Setpoint') #Plot temperature setpoint
+        #Plot 50 mK stage
+        ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,2], '-', label='50 mK FAA') 
+        #Plot temperature setpoint
+        ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,7], '-', label='Temperature Setpoint') 
         ax.set_xlabel('Hours after Regen')
         ax.set_ylabel('Temperature (K)')
         ax.set_xlim(-0.25,maxtime+0.25) #Set x axis limits based on longest magnet cycle
         ax.set_ylim(0,6)
         ax.legend(loc='upper right')  
+        ax.set_title('Regen {} '.format(i+1) + str(regenfiles['regen{}'.format(i+1)].iloc[0,0])[:10])
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
 
 def regen_mag_plots(regenfiles, window):
     '''
     Creates plots of magnet current and voltage for all magnet cycles in a run
+    Figure containing a variable number of subplots depending on the number of magnet cycles in the run
+    Each subplot shows magnet current and voltage versus time
 
     Parameters
     ----------
     regenfiles : dict
         Dictionary containing magnet cycle stage logs
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    fig : figure
-        Figure containing a variable number of subplots depending on the number of magnet cycles in the run
-        Each subplot shows magnet current and voltage versus time
+    None.
 
     '''
     tot = len(regenfiles)
@@ -343,37 +394,44 @@ def regen_mag_plots(regenfiles, window):
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    maxtime = np.max([regen.iloc[-1,1] for regen in regenfiles.values()]) #Determine length of longest magnet cycle 
+    #Determine length of longest magnet cycle 
+    maxtime = np.max([regen.iloc[-1,1] for regen in regenfiles.values()]) 
     for i in range(tot):
         ax = window.canvas.fig.add_subplot(row,col,position[i])
-        PS_I=ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,8], 'g-', label='Magnet Current') #Plot magnet current
+        #Plot magnet current
+        PS_I=ax.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,8], 'g-', label='Magnet Current') 
         ax.set_xlabel('Hours after Regen')
         ax.set_ylabel('Magnet Current (A)')
         ax.set_xlim(-0.25,maxtime+0.25) #Set x axis limits based on longest magnet cycle
         ax.set_ylim(0,20)
         ax2 = ax.twinx()
-        PS_V=ax2.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,9],'r-', label='Magnet Voltage') #Plot magnet voltage
+        #Plot magnet voltage
+        PS_V=ax2.plot(regenfiles['regen{}'.format(i+1)].iloc[:,1], regenfiles['regen{}'.format(i+1)].iloc[:,9],'r-', label='Magnet Voltage') 
         ax2.set_ylabel('Magnet Voltage (V)')
         ax2.set_ylim(0,3)
         axs = PS_I+PS_V
         labs = [l.get_label() for l in axs]
         ax.legend(axs, labs, loc='center')
+        ax.set_title('Regen {} '.format(i+1) + str(regenfiles['regen{}'.format(i+1)].iloc[0,0])[:10])
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
 
 def reg_temp_plots(regfiles, window):
     '''
     Creates temperature plots for all temperature holds in a run 
+    Figure containing a variable number of subplots depending on the number of temperature holds in the run
+    Each subplot shows temperature of cold stage and temperature setpoint versus time
 
     Parameters
     ----------
     regfiles : dict
         Dictionary containing temperature hold stage logs
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    fig : figure
-        Figure containing a variable number of subplots depending on the number of temperature holds in the run
-        Each subplot shows temperature of cold stage and temperature setpoint versus time
+    None.
+        
 
     '''
     tot = len(regfiles)
@@ -381,32 +439,38 @@ def reg_temp_plots(regfiles, window):
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) #Determine length of longest temperature hold
+    #Determine length of longest temperature hold
+    maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) 
     for i in range(tot):
         ax = window.canvas.fig.add_subplot(row,col,position[i])
-        ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,2], '-', label='50 mK FAA') #Plot 50 mK stage
-        ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,7], '-', label='Temperature Setpoint') #Plot temperature setpoint
+        #Plot 50 mK stage
+        ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,2], '-', label='50 mK FAA') 
+        #Plot temperature setpoint
+        ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,7], '-', label='Temperature Setpoint') 
         ax.set_xlabel('Hours after Reg')
         ax.set_ylabel('Temperature (K)')
         ax.set_xlim(-1,maxtime+1) #Set x axis limits based on longest temperature hold
         ax.set_ylim(0.030,0.080)
-        ax.legend(loc='upper right') 
+        ax.legend(loc='upper right')
+        ax.set_title('Reg {} '.format(i+1) + str(regfiles['reg{}'.format(i+1)].iloc[0,0])[:10])
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
 
 def reg_mag_plots(regfiles, window):
     '''
     Creates plots of magnet current and voltage for multiple temperature holds
+    Figure containing a variable number of subplots depending on the number of temperature holds in the run
+    Each subplot shows magnet current and voltage versus time
 
     Parameters
     ----------
     regfiles : dict
         Dictionary containing temperature hold stage logs
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    fig : figure
-        Figure containing a variable number of subplots depending on the number of DataFrames in the dictionary
-        Each subplot shows magnet current and voltage versus time
+    None.
 
     '''
     tot = len(regfiles)
@@ -414,60 +478,71 @@ def reg_mag_plots(regfiles, window):
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) #Determine length of longest temperature hold
+    #Determine length of longest temperature hold
+    maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) 
     for i in range(tot):
         ax = window.canvas.fig.add_subplot(row,col,position[i])
-        PS_I=ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,8], 'g-', label='Magnet Current') #Plot magnet current
+        #Plot magnet current
+        PS_I=ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,8], 'g-', label='Magnet Current') 
         ax.set_xlabel('Hours after Reg')
         ax.set_ylabel('Magnet Current (A)')
         ax.set_xlim(-1,maxtime+1) #Set x axis limits based on longest temperature hold
         ax.set_ylim(0,0.8)
         ax2 = ax.twinx()
-        PS_V=ax2.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,9],'r-', label='Magnet Voltage') #Plot magnet voltage
+        #Plot magnet voltage
+        PS_V=ax2.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,9],'r-', label='Magnet Voltage') 
         ax2.set_ylabel('Magnet Voltage (V)')
         ax2.set_ylim(0,8)
         axs = PS_I+PS_V
         labs = [l.get_label() for l in axs]
         ax.legend(axs, labs, loc='upper right')
+        ax.set_title('Reg {} '.format(i+1) + str(regfiles['reg{}'.format(i+1)].iloc[0,0])[:10])
         plt.subplots_adjust(wspace = 0.5, hspace=0.75)
 
 def reg_3K_plots(regfiles, window):
     '''
     Creates temperature plots of 3K stage for all temperature hold phases of a run 
+    Figure containing a variable number of subplots depending on the number of temperature holds in a run
+    Each subplot shows temperature of 3K stage versus time 
 
     Parameters
     ----------
     regfiles : dict
         Dictionary containing all temperature hold logs in a run 
+    window : PlotWindow
+        Window containing MatPlotLib canvas which gets plotted to 
 
     Returns
     -------
-    fig : figure
-        Figure containing a variable number of subplots depending on the number of temperature holds in a run
-        Each subplot shows temperature of 3K stage versus time 
-
+    None.
+        
     '''
     tot = len(regfiles)
     col = 3
     row = tot // col
     row += tot % col
     position = range(1,tot + 1)
-    maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) #Determine length of longest temperature hold
+    #Determine length of longest temperature hold
+    maxtime = np.max([reg.iloc[-1,1] for reg in regfiles.values()]) 
     for i in range(tot):
         ax = window.canvas.fig.add_subplot(row,col,position[i])
-        ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,4], '-', label='3K Stage Diode') #Plot 3K stage
+        #Plot 3K stage
+        ax.plot(regfiles['reg{}'.format(i+1)].iloc[:,1], regfiles['reg{}'.format(i+1)].iloc[:,4], '-', label='3K Stage Diode') 
         ax.set_xlabel('Hours after Reg')
         ax.set_ylabel('Temperature (K)')
         ax.set_xlim(-1,maxtime+1) #Set x axis limits based on longest temperature hold
         ax.set_ylim(2.3,3.7)
         ax.legend(loc='upper left') 
+        ax.set_title('Reg {} '.format(i+1) + str(regfiles['reg{}'.format(i+1)].iloc[0,0])[:10])
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
+
 
 '''
 
 The functions below calculate various summary quantities
 
 '''
+
 
 def temp_summary(regfiles, cryostat):
     '''
@@ -477,7 +552,7 @@ def temp_summary(regfiles, cryostat):
     Parameters
     ----------
     regfiles : dict
-        Dictionary of all temperature hold logs of a run 
+        Dictionary of all temperature hold logs of a run
 
     Returns
     -------
@@ -521,6 +596,7 @@ def temp_summary_combine(temp_qtys, cryostat):
         Columns are summary quantities for all temperature stages (i.e. 50 mK min, 50 mK max, ... 50 K mean, 50 K std dev) 
 
     '''
+    #Slightly different logic depending on cryostat model due to unique column names 
     if cryostat == 107:
         temp_qtys_combined = pd.concat([temp_qtys['50 mK'],temp_qtys['He-3'],temp_qtys['3 K'],temp_qtys['50 K']],axis=1)
     elif cryostat == 102:
@@ -544,14 +620,14 @@ def hold_summary(regfiles):
         Columns are summary quantities (i.e. hold time, maximum current, rate of current decrease 1, etc) 
 
     '''
-    qtys = [] #Initialize list
-    for log in regfiles.values(): #Loop through all temperature hold logs in a run 
+    qtys = [] #Initialize list which will store lists of summary quantities for each temperature hold phase
+    for log in regfiles.values(): #Loop through all temperature hold phases in a run 
         #Revise each log: select relevant rows, start log from when magnet reaches maximum current, and reset index and "Hours after Start" to 0
         hold = log.iloc[np.argmax(log['Magnet Current']):,[0,1,8]].reset_index(drop=True)
         hold["Hours after Start"] = (hold['Date/Time']-hold.iloc[0,0]).dt.total_seconds()/3600
-        holdtime = hold.iloc[-1,1] #Hold time is last entry of "Hours after Start" column 
-        maxcurrent = np.max(hold['Magnet Current']) #Calculate max current
-        #Calculate rate of magnet current decrease in 3 different ways
+        holdtime = hold.iloc[-1,1] #Hold time = last entry of "Hours after Start" column 
+        maxcurrent = np.max(hold['Magnet Current']) #Find max current
+        #Calculate rate of magnet current decrease 3 different ways
         slope1 = stats.linregress(hold['Hours after Start'],hold['Magnet Current'])[0] #scipy linear regression
         slope2 = (hold.iloc[-1,2]-hold.iloc[0,2])/hold.iloc[-1,1] #maximum current / hold time
         slope3 = np.mean(np.diff(hold['Magnet Current'])/np.diff(hold['Hours after Start'])) #average rate of change 
@@ -605,7 +681,8 @@ def regen_time(regen_log):
         Magnet cycle time in hours 
 
     '''
-    regen_log = regen_log.loc[regen_log['Magnet Current']>0.006] #Select rows where magnet current is above 0.006 A
+    #Select rows where magnet current is above 0.006 A
+    regen_log = regen_log.loc[regen_log['Magnet Current']>0.006] 
     regen_log.reset_index(drop=True, inplace = True)
     regen_log["Hours after Start"] = (regen_log['Date/Time']-regen_log.iloc[0,0]).dt.total_seconds()/3600
     regen_time = regen_log.iloc[-1,1] #Magnet cycle time is last entry of "Hours after Start" column 
@@ -613,7 +690,7 @@ def regen_time(regen_log):
 
 def regen_summary(regenfiles): 
     '''
-    Creates Pandas Series of magnet cycle times for all magnet cycles in a run
+    Creates DataFrame of magnet cycle times for all magnet cycles in a run
 
     Parameters
     ----------
@@ -622,16 +699,17 @@ def regen_summary(regenfiles):
 
     Returns
     -------
-    regen_times : Series
-        Series of all magnet cycle times in a run
+    regen_times : DataFrame
+        DataFrame of all magnet cycle times in a run
         Magnet cycles are in chronological order, and the index is default
 
     '''
     #Create array of lists, with each list containing the magnet cycle number and magnet cycle time for a magnet cycle.
     qtys = np.array([np.array([key[5:],regen_time(log)]) for key, log in regenfiles.items()])
-    #Create Pandas Series from array 
+    #Create DataFrame from array 
     regen_times = pd.DataFrame(data=qtys[:,1],index = qtys[:,0], columns = ['Regen times']).sort_index().reset_index(drop=True)
     return regen_times
+
 
 '''
 
@@ -639,6 +717,7 @@ The functions below create various summary quantity plots for multiple log files
 They are specific to 107 log files
 
 '''
+
 
 def maxcurrent_holdtime(loglist, window): 
     '''
