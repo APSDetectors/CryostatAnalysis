@@ -261,9 +261,15 @@ class SummaryPlot(QGroupBox):
         self.maxcurrentbutton = QRadioButton("Max current vs. hold time")
         self.stddevbutton = QRadioButton("50 mK std dev vs. date")
         self.tempqtysbutton = QRadioButton("3 K temperature qtys vs. date")
-    
+        
+        self.setpoint = QLineEdit()
+        
+        currentlayout = QHBoxLayout()
+        currentlayout.addWidget(self.maxcurrentbutton)
+        currentlayout.addWidget(self.setpoint)
+        
         buttonlayout = QVBoxLayout()
-        buttonlayout.addWidget(self.maxcurrentbutton)
+        buttonlayout.addLayout(currentlayout)
         buttonlayout.addWidget(self.stddevbutton)
         buttonlayout.addWidget(self.tempqtysbutton)
         
@@ -297,7 +303,10 @@ class SummaryPlot(QGroupBox):
     def show_plot(self): 
         self.plotwindow = PlotWindow()
         typefunc = {"Max current vs. hold time":cryo.maxcurrent_holdtime, "50 mK std dev vs. date":cryo.stddev_time, "3 K temperature qtys vs. date":cryo.temp_minmaxmean}
-        typefunc[self.plottype](self.paths,self.plotwindow)
+        if self.plottype == "Max current vs. hold time":
+            typefunc[self.plottype](self.paths,float(self.setpoint.text()), self.plotwindow)
+        else:
+            typefunc[self.plottype](self.paths,self.plotwindow)
         
 class SummaryData(QGroupBox):
     def __init__(self):

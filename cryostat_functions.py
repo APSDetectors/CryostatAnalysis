@@ -719,7 +719,7 @@ They are specific to 107 log files
 '''
 
 
-def maxcurrent_holdtime(loglist, window): 
+def maxcurrent_holdtime(loglist, setpoint, window): 
     '''
     Scatter plot of maximum magnet current versus hold time for temperature holds across multiple log files
     Each log file has a unique marker color; legend shows date of each log file
@@ -745,10 +745,14 @@ def maxcurrent_holdtime(loglist, window):
         label = str(log.iloc[0,0])[:10]
         dicts = split_107(log)
         regs = temp_hold(dicts[2]) #Dictionary of all, revised temperature hold logs
-        hold = hold_summary(regs) #DataFrame of magnet-related summary quantities 
+        new_regs = {key:val for key, val in regs.items() if val.iloc[0,7] == setpoint}
+        if new_regs: 
+            hold = hold_summary(new_regs) #DataFrame of magnet-related summary quantities 
         #Plot max current vs. hold time 
-        ax.scatter(hold.loc[:,'Hold Time'],hold.loc[:,'Max Current'], s=10, marker="s", label=label)
+            ax.scatter(hold.loc[:,'Hold Time'],hold.loc[:,'Max Current'], s=10, marker="s", label=label)
     ax.legend(loc = 'upper right')
+    
+    return new_regs
 
 def stddev_time(loglist,window):
     '''
@@ -810,4 +814,5 @@ def temp_minmaxmean(loglist, window):
         dates = temps.index
         #Create stacked error bar plot showing min, max, and mean of temperature stage versus date of temperature hold
         ax.errorbar(dates, means, [means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
+
 
