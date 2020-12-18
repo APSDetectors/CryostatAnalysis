@@ -721,13 +721,15 @@ They are specific to 107 log files
 
 def maxcurrent_holdtime(loglist, setpoint, window): 
     '''
-    Scatter plot of maximum magnet current versus hold time for temperature holds across multiple log files
+    Scatter plot of maximum magnet current versus hold time for temperature holds across multiple log files for a given setpoint temperature 
     Each log file has a unique marker color; legend shows date of each log file
 
     Parameters
     ----------
     loglist : list
         List of 107 log filepaths
+    setpoint: float
+        50 mK stage setpoint of interest (e.g. 0.06)
     window : PlotWindow
         Window containing MatPlotLib canvas which gets plotted to 
 
@@ -751,12 +753,10 @@ def maxcurrent_holdtime(loglist, setpoint, window):
         #Plot max current vs. hold time 
             ax.scatter(hold.loc[:,'Hold Time'],hold.loc[:,'Max Current'], s=10, marker="s", label=label)
     ax.legend(loc = 'upper left')
-    
-    return new_regs
 
-def stddev_time(loglist,window):
+def stddev_time(loglist, window):
     '''
-    Creates scatter plot of 50 mK stage standard deviation versus date of temperature hold for temperature holds across multiple log files
+    Creates scatter plot of 50 mK stage standard deviation in microKelvin versus date of temperature hold for temperature holds across multiple log files
 
     Parameters
     ----------
@@ -772,25 +772,28 @@ def stddev_time(loglist,window):
     '''
     ax = window.canvas.fig.add_subplot(111) #Add subplot to figure of MPL canvas in window and assign it to varible ax
     ax.set_xlabel('Date')
-    ax.set_ylabel('50 mK Std Dev')
-    ax.set_ylim(0, 0.002) #Y-axis limits may need to be manually adjusted 
+    ax.set_ylabel('50 mK Std Dev (microK)')
+    ax.set_ylim(0, 1000) #Y-axis limits may need to be manually adjusted 
     num = len(loglist) #Number of log files
     for i in range(num): #Loop through number of log files
         log = load_107(loglist[i]) #Load and process each log file
         dicts = split_107(log)
         regs = temp_hold(dicts[2]) #Dictionary of all, revised temperature hold logs
         temp = temp_summary(regs,107)['50 mK'] #DataFrame of temperature-related summary quantities for 50 mK stage
+        stddev = temp.loc[:,'50 mK std dev'].map(lambda x : x*10**6) #Series of standard deviation
         x = temp.index #Get date and time of each temperature hold 
-        ax.scatter(x,temp.loc[:,'50 mK std dev'], s=10, marker="s") #Plot 50 mK std dev versus date of temp hold
+        ax.scatter(x,stddev, s=10, marker="s") #Plot 50 mK std dev versus date of temp hold
 
-def temp_minmaxmean(loglist, window): 
+def temp_minmaxmean(loglist, temp, window): 
     '''
-    Creates stacked error bar plot of min, max, and mean of 3K stage versus date of temperature hold for temperature holds across multiple log files
+    Creates stacked error bar plot of min, max, and mean of desired temperature stage versus date of temperature hold for temperature holds across multiple log files
 
     Parameters
     ----------
     loglist : list
         List of 107 log filepaths
+    temp : str
+        Temperature stage of interest (e.g. "3 K")
     window : PlotWindow
         Window containing MatPlotLib canvas which gets plotted to 
 
@@ -808,9 +811,9 @@ def temp_minmaxmean(loglist, window):
         dicts = split_107(log)
         regs = temp_hold(dicts[2]) #Dictionary of all, revised temperature hold logs
         temps = temp_summary_combine(temp_summary(regs,107),107) #DataFrame of temperature-related summary quantities for all temperature stages and all temperature holds
-        mins = temps['3 K min'] #Other temperature stages can be analyzed by manually changing the column names
-        maxes = temps['3 K max']
-        means = temps['3 K mean']
+        mins = temps['{} min'.format(temp)] 
+        maxes = temps['{} max'.format(temp)]
+        means = temps['{} mean'.format(temp)]
         dates = temps.index
         #Create stacked error bar plot showing min, max, and mean of temperature stage versus date of temperature hold
         ax.errorbar(dates, means, [means - mins, maxes - means], fmt='.k', ecolor='gray', lw=1)
