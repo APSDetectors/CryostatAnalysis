@@ -750,7 +750,7 @@ def maxcurrent_holdtime(loglist, setpoint, window):
             hold = hold_summary(new_regs) #DataFrame of magnet-related summary quantities 
         #Plot max current vs. hold time 
             ax.scatter(hold.loc[:,'Hold Time'],hold.loc[:,'Max Current'], s=10, marker="s", label=label)
-    ax.legend(loc = 'upper right')
+    ax.legend(loc = 'upper left')
     
     return new_regs
 
