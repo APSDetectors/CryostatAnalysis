@@ -139,7 +139,6 @@ class SinglePhasePlot(QGroupBox):
         self.coolbutton.pressed.connect(self.press_cool)
         self.regenbutton.pressed.connect(self.press_regen)
         self.regbutton.pressed.connect(self.press_reg) 
-        self.choosephase.activated.connect(self.choose_phase)
         self.plot.clicked.connect(self.show_plot)
     
     def open_file(self):
@@ -165,12 +164,10 @@ class SinglePhasePlot(QGroupBox):
         self.choosephase.clear()
         self.choosephase.addItems(options)
         self.phasetype = 2
-        
-    def choose_phase(self):
-        self.phaseindex = self.choosephase.currentIndex()
             
     def show_plot(self):
         self.plotwindow = PlotWindow()
+        self.phaseindex = self.choosephase.currentIndex()
         if self.phasetype == 0: 
             if self.phaseindex == 0:
                 cryo.cooldown_plot(self.logs[0]['log1'],self.plotwindow)
@@ -263,7 +260,8 @@ class SummaryPlot(QGroupBox):
         self.tempqtysbutton = QRadioButton("Temperature qtys vs. date")
         
         self.setpoint = QLineEdit("Enter 50 mK setpoint (e.g. 0.06)")
-        self.temp = QLineEdit("Enter temperature stage of interest (e.g. 3 K)") 
+        self.choosetemp = QComboBox() 
+        self.choosetemp.addItems(['50 mK','He-3','3 K','50 K'])
         
         currentlayout = QHBoxLayout()
         currentlayout.addWidget(self.maxcurrentbutton)
@@ -271,7 +269,7 @@ class SummaryPlot(QGroupBox):
         
         templayout = QHBoxLayout()
         templayout.addWidget(self.tempqtysbutton)
-        templayout.addWidget(self.temp)
+        templayout.addWidget(self.choosetemp)
         
         buttonlayout = QVBoxLayout()
         buttonlayout.addLayout(currentlayout)
@@ -311,7 +309,8 @@ class SummaryPlot(QGroupBox):
         if self.plottype == "Max current vs. hold time":
             typefunc[self.plottype](self.paths,float(self.setpoint.text()), self.plotwindow)
         elif self.plottype == "Temperature qtys vs. date":
-            typefunc[self.plottype](self.paths, self.temp.text(), self.plotwindow)
+            self.temptext = self.choosetemp.currentText()
+            typefunc[self.plottype](self.paths, self.temptext, self.plotwindow)
         else:
             typefunc[self.plottype](self.paths,self.plotwindow)
         
