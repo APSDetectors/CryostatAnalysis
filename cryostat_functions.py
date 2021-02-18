@@ -532,7 +532,7 @@ def reg_3K_plots(regfiles, window):
         ax.set_ylabel('Temperature (K)')
         ax.set_xlim(-1,maxtime+1) #Set x axis limits based on longest temperature hold
         ax.set_ylim(2.3,3.7)
-        ax.legend(loc='upper left') 
+        ax.legend(loc='upper left', fontsize = 5) 
         ax.set_title('Reg {} '.format(i+1) + str(regfiles['reg{}'.format(i+1)].iloc[0,0])[:10])
         plt.subplots_adjust(wspace = 0.5, hspace=0.5)
 
