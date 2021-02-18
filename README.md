@@ -1,5 +1,5 @@
 # CryostatAnalysis
-Python scripts to analyze and visualize HPD Model 107 ADR Cryostat log file data <br/>
+Python GUI to analyze and visualize HPD Model 107 ADR Cryostat log file data <br/>
 <br/>
 Works with complete log files (from warmup to cooldown) in .csv format <br/>
 <br/>
